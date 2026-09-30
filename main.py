@@ -15,7 +15,7 @@ user_data = {}
 # মূল মেনু
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn_sell = types.KeyboardButton("🪙 Sell Coin 🪙")
+    btn_sell = types.KeyboardButton("💸 Sell Coin 💸")
     btn_rate = types.KeyboardButton("📈 TODAY RATE")
     btn_chan = types.KeyboardButton("🔥 Telegram চ্যানেল")
     btn_sup = types.KeyboardButton("📞 SUPPORT")
@@ -34,7 +34,7 @@ def cancel_menu():
 def payment_methods_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
     markup.add(
-        types.KeyboardButton("🪙 বিকাশ (Bkash)"),
+        types.KeyboardButton("🧰 বিকাশ (Bkash)"),
         types.KeyboardButton("💼 নগদ (Nagad)"),
         types.KeyboardButton("🚫 Cancel")
     )
@@ -75,7 +75,7 @@ def handle_messages(message):
         bot.send_message(chat_id, f"যেকোনো প্রয়োজনে যোগাযোগ করুন: {SUPPORT_USER}")
         return
 
-    if text == "🪙 Sell Coin 🪙 ":
+    if text == "💸 Sell Coin 💸 ":
         user_data[chat_id] = {'step': 'WAIT_COIN'}
         msg_text = (
             "💰 কত হাজার কয়েন বিক্রি করতে চান?\n"
@@ -95,7 +95,7 @@ def handle_messages(message):
         return
 
     if chat_id in user_data and user_data[chat_id].get('step') == 'WAIT_METHOD':
-        if text in ["🪙 বিকাশ (Bkash)", "💼 নগদ (Nagad)"]:
+        if text in ["🧰 বিকাশ (Bkash)", "💼 নগদ (Nagad)"]:
             user_data[chat_id]['method'] = text
             user_data[chat_id]['step'] = 'WAIT_NUMBER'
             bot.send_message(chat_id, f"দয়া করে আপনার পার্সোনাল {text} নম্বরটি দিন:", reply_markup=cancel_menu())
@@ -108,7 +108,7 @@ def handle_messages(message):
         caption_text = (
             "[🗒]\n"
             "📸 এই ইউজারনেমে Top Coin পাঠিয়ে একটি স্ক্রিনশট আপলোড করুন।\n\n"
-            f"ইউজারনেম:- \n`{TOPFOLLOW_USERNAME}`\n \n\n"
+            f"ইউজারনেম: \n`{TOPFOLLOW_USERNAME}`\n \n\n"
             "🛡️ Screenshot জমা দিন"
         )
         bot.send_message(chat_id, caption_text, parse_mode="Markdown", reply_markup=cancel_menu())
