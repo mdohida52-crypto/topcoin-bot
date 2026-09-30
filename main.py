@@ -1,36 +1,46 @@
+import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import telebot
 from telebot import types
 
-# --- আপনার তথ্যগুলো এখানে কোটেশনের ভেতরে বসান ---
+# Render Live Server
+class HealthCheck(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+def run_srv():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthCheck)
+    server.serve_forever()
+
+threading.Thread(target=run_srv, daemon=True).start()
+
+# --- আপনার তথ্যগুলো এখানে বসান ---
 BOT_TOKEN = "8665209596:AAGU8WrS3DSCYndaYxu3ueMffm7sG-EN-ws"
-ADMIN_ID = 2012334358  # এখানে আপনার সেই টেলিগ্রাম ID নম্বরটি দিন (কোনো কোটেশন ছাড়া)
+ADMIN_ID = 2012334358  # আপনার টেলিগ্রাম আইডি নম্বর
 TOPFOLLOW_USERNAME = "moinraj2026"
 CHANNEL_LINK = "https://t.me/Smart_Earning2"
-SUPPORT_USER = "@Moin1239"  # আপনার টেলিগ্রাম ইউজারনেম
-# -----------------------------------------------
+SUPPORT_USER = "@Moin1239"
+# ---------------------------------
 
 bot = telebot.TeleBot(BOT_TOKEN)
 user_data = {}
 
-# মূল মেনু
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    btn_sell = types.KeyboardButton("💸 Sell Coin 💸")
-    btn_rate = types.KeyboardButton("📈 TODAY RATE")
-    btn_chan = types.KeyboardButton("🔥 Telegram চ্যানেল")
-    btn_sup = types.KeyboardButton("📞 SUPPORT")
-    markup.add(btn_sell)
-    markup.add(btn_rate, btn_chan)
-    markup.add(btn_sup)
+    markup.add(types.KeyboardButton("💸 Sell Coin 💸"))
+    markup.add(types.KeyboardButton("📈 TODAY RATE"), types.KeyboardButton("🔥 Telegram চ্যানেল"))
+    markup.add(types.KeyboardButton("📞 SUPPORT"))
     return markup
 
-# ক্যান্সেল বাটন
 def cancel_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(types.KeyboardButton("🚫 Cancel"))
     return markup
 
-# পেমেন্ট মেথড বাটন
 def payment_methods_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
     markup.add(
@@ -52,18 +62,22 @@ def start_cmd(message):
 @bot.message_handler(func=lambda msg: True, content_types=['text'])
 def handle_messages(message):
     chat_id = message.chat.id
-    text = message.text
+    text = message.text.strip()
+    text_lower = text.lower()
 
-    if text == "🚫 Cancel" or text == "Main Menu":
+    # ১. Cancel
+    if "cancel" in text_lower or "বাতিল" in text or "main menu" in text_lower:
         user_data.pop(chat_id, None)
         bot.send_message(chat_id, "অপারেশন বাতিল করা হয়েছে।", reply_markup=main_menu())
         return
 
-    if text == "📈 TODAY RATE":
-        bot.send_message(chat_id, "New Top Coin প্রতি 1k Coin = 5.5 Tk ✅")
+    # ২. Today Rate
+    if "rate" in text_lower or "রেট" in text:
+        bot.send_message(chat_id, "Top Coin প্রতি 1k Coin = 5.4 Tk ✅")
         return
 
-    if text == "🔥 Telegram চ্যানেল":
+    # ৩. Channel
+    if "চ্যানেল" in text or "channel" in text_lower:
         chan_text = (
             "টেলিগ্রাম চ্যানেলে Join করে ইনকাম করতে থাকুন 👇👇\n\n"
             f"🔥 Link: {CHANNEL_LINK}"
@@ -71,44 +85,55 @@ def handle_messages(message):
         bot.send_message(chat_id, chan_text)
         return
 
-    if text == "📞 SUPPORT":
+    # ৪. Support
+    if "support" in text_lower or "সাপোর্ট" in text:
         bot.send_message(chat_id, f"যেকোনো প্রয়োজনে যোগাযোগ করুন: {SUPPORT_USER}")
         return
 
-    if text == "💸 Sell Coin 💸 ":
+    # ৫. Sell Top Coin (যেভাবেই চাপ দিক সাথে সাথে কাজ করবে)
+    if "sell" in text_lower or "কয়েন" in text or "coin" in text_lower:
         user_data[chat_id] = {'step': 'WAIT_COIN'}
         msg_text = (
             "💰 কত হাজার কয়েন বিক্রি করতে চান?\n"
-            "সংখ্যায় লিখুন, সর্ব নিম্ন ( 10,000 )  কয়েন লিখুন"
+            "সংখ্যায় লিখুন, সর্বনিম্ন 10k Coin, মোট কয়েন লিখুন"
         )
         bot.send_message(chat_id, msg_text, reply_markup=cancel_menu())
         return
 
+    # ৬. কয়েন সংখ্যা নেওয়া
     if chat_id in user_data and user_data[chat_id].get('step') == 'WAIT_COIN':
         if not text.isdigit() or int(text) < 5000:
-            bot.send_message(chat_id, "⚠️ সংখ্যায় লিখুন, সর্ব নিম্ন ( 10,000 ) কয়েন লিখুন:", reply_markup=cancel_menu())
+            bot.send_message(chat_id, "⚠️ সংখ্যায় লিখুন, সর্বনিম্ন 10k Coin, মোট কয়েন লিখুন:", reply_markup=cancel_menu())
             return
-        
         user_data[chat_id]['amount'] = text
         user_data[chat_id]['step'] = 'WAIT_METHOD'
         bot.send_message(chat_id, "Select Payment Receive Method / পেমেন্ট নেওয়ার মাধ্যম সিলেক্ট করুন:", reply_markup=payment_methods_menu())
         return
 
+    # ৭. বিকাশ বা নগদ সিলেক্ট করা (দুটোই ১০০% কাজ করবে)
     if chat_id in user_data and user_data[chat_id].get('step') == 'WAIT_METHOD':
-        if text in ["🧰 বিকাশ (Bkash)", "💼 নগদ (Nagad)"]:
-            user_data[chat_id]['method'] = text
+        if "বিকাশ" in text or "bkash" in text_lower:
+            user_data[chat_id]['method'] = "বিকাশ (Bkash)"
             user_data[chat_id]['step'] = 'WAIT_NUMBER'
-            bot.send_message(chat_id, f"দয়া করে আপনার পার্সোনাল {text} নম্বরটি দিন:", reply_markup=cancel_menu())
-        return
+            bot.send_message(chat_id, "দয়া করে আপনার পার্সোনাল বিকাশ নম্বরটি দিন:", reply_markup=cancel_menu())
+            return
+        elif "নগদ" in text or "nagad" in text_lower:
+            user_data[chat_id]['method'] = "নগদ (Nagad)"
+            user_data[chat_id]['step'] = 'WAIT_NUMBER'
+            bot.send_message(chat_id, "দয়া করে আপনার পার্সোনাল নগদ নম্বরটি দিন:", reply_markup=cancel_menu())
+            return
+        else:
+            bot.send_message(chat_id, "নিচের বাটন থেকে পেমেন্ট মেথড নির্বাচন করুন:", reply_markup=payment_methods_menu())
+            return
 
+    # ৮. নম্বর নেওয়া
     if chat_id in user_data and user_data[chat_id].get('step') == 'WAIT_NUMBER':
         user_data[chat_id]['number'] = text
         user_data[chat_id]['step'] = 'WAIT_PHOTO'
-        
         caption_text = (
             "[🗒]\n"
             "📸 এই ইউজারনেমে Top Coin পাঠিয়ে একটি স্ক্রিনশট আপলোড করুন।\n\n"
-            f"ইউজারনেম: \n`{TOPFOLLOW_USERNAME}`\n \n\n"
+            f"ইউজারনেম 👉 \n`{TOPFOLLOW_USERNAME}`\n 👈\n\n"
             "🛡️ Screenshot জমা দিন"
         )
         bot.send_message(chat_id, caption_text, parse_mode="Markdown", reply_markup=cancel_menu())
