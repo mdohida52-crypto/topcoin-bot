@@ -73,7 +73,7 @@ def handle_messages(message):
 
     # ২. Today Rate
     if "rate" in text_lower or "রেট" in text:
-        bot.send_message(chat_id, "Top Coin প্রতি 1k Coin = 19 Tk ✅")
+        bot.send_message(chat_id, "Top Coin প্রতি 1k Coin = 20 Tk ✅")
         return
 
     # ৩. Channel
